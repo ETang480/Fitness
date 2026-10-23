@@ -4,9 +4,11 @@
  * Every request must carry the key kept in Script Properties (API_KEY); get it from <"Only myself" web app url>?pair=1.
  *
  * The app POSTs text/plain JSON (no CORS preflight): { key, fn: 'sync', date: 'yyyy-MM-dd', ops: [...] }
- *   op = { id, type: 'add', date, items: [{ food, amount, per, kcalPer, proteinPer, save, note }] }
- *      | { id, type: 'update', entryId, food, kcal, protein }
+ *   op = { id, type: 'add', date, items: [{ food, amount, per, kcalPer, proteinPer, save, note, amountText? }] }
+ *      | { id, type: 'update', entryId, food, kcal, protein, amount? }
  *      | { id, type: 'delete', entryId, food }
+ *      | { id, type: 'weight', date, kg }            (kg '' clears that day)
+ *      | { id, type: 'reorder', names: [...] }       (these Foods rows swap into this order among themselves)
  * Ops run in order; each gets 'ok' or an error message in results[id]. Log rows carry an id in column G
  * (`<op id>-<n>` for app entries, assigned on first read for others), so retries never log twice.
  */
@@ -63,7 +65,7 @@ function applyOp_(ss, log, tz, op) {
     const rows = clean.map((it, i) => {
       const k = scale_(it.per, it.amount);
       return [date, it.food, round1_(it.kcalPer * k), it.proteinPer === '' ? '' : round1_(it.proteinPer * k),
-              amountText_(it.per, it.amount), it.note, op.id + '-' + i];
+              it.amountText != null ? it.amountText : amountText_(it.per, it.amount), it.note, op.id + '-' + i];
     });
     const first = log.getLastRow() + 1;
     if (first + rows.length - 1 > log.getMaxRows()) log.insertRowsAfter(log.getMaxRows(), 200);
@@ -78,11 +80,30 @@ function applyOp_(ss, log, tz, op) {
     const row = findId_(log, op.entryId);
     if (!row) throw new Error('That entry is no longer in the sheet.');
     log.getRange(row, 3, 1, 2).setValues([[round1_(k), p === '' ? '' : round1_(p)]]);
+    if (op.amount != null) log.getRange(row, 5).setValue(String(op.amount).slice(0, 40));
     const note = String(log.getRange(row, 6).getValue());
     if (!/edited/i.test(note)) log.getRange(row, 6).setValue(note ? note + '; edited' : 'Edited');
   } else if (op.type === 'delete') {
     const row = findId_(log, op.entryId);
     if (row) log.deleteRow(row); // already gone counts as done
+  } else if (op.type === 'weight') {
+    const kg = op.kg === '' || op.kg == null ? '' : Number(op.kg);
+    if (kg !== '' && !(kg > 20 && kg < 400)) throw new Error('Enter your weight in kg.');
+    const date = dateAt_(op.date, tz);
+    const sh = ss.getSheetByName(WEIGHT);
+    const row = weightRow_(sh, tz, op.date);
+    if (kg === '') {
+      if (row) sh.deleteRow(row);
+    } else if (row) {
+      sh.getRange(row, 2).setValue(round1_(kg));
+    } else {
+      const r = sh.getLastRow() + 1;
+      sh.getRange(r, 1, 1, 2).setValues([[date, round1_(kg)]]);
+      sh.getRange(r, 1).setNumberFormat('dd/mm/yyyy');
+      sh.getRange(r, 2).setNumberFormat('0.0');
+    }
+  } else if (op.type === 'reorder') {
+    reorderFoods_(ss, op.names || []);
   } else {
     throw new Error('Unknown change');
   }
@@ -99,7 +120,41 @@ function cleanItem_(it) {
   if (proteinPer !== '' && (!isFinite(proteinPer) || proteinPer < 0)) throw new Error('Protein for ' + food + ' needs to be a number.');
   if (per === '100g' && !(amount > 0)) throw new Error('Enter the grams for ' + food + '.');
   return { food: food, per: per, kcalPer: kcalPer, proteinPer: proteinPer, amount: amount > 0 ? amount : 1, save: !!it.save,
-           note: String(it.note || '').slice(0, 300) };
+           note: String(it.note || '').slice(0, 300),
+           // set for quick calories and repeats of adjusted entries, which log their totals as they are
+           amountText: typeof it.amountText === 'string' ? it.amountText.slice(0, 40) : null };
+}
+
+function weightRow_(sh, tz, ymd) {
+  const last = sh.getLastRow();
+  if (last < 2) return 0;
+  const dates = sh.getRange(2, 1, last - 1, 1).getValues();
+  for (let i = dates.length - 1; i >= 0; i--) {
+    if (dates[i][0] instanceof Date && Utilities.formatDate(dates[i][0], tz, 'yyyy-MM-dd') === ymd) return i + 2;
+  }
+  return 0;
+}
+
+// The named foods trade places so they read in the given order; every other row stays where it is.
+// Column H (Times logged) is one ARRAYFORMULA, so only A:G and I move.
+function reorderFoods_(ss, names) {
+  const sh = ss.getSheetByName(FOODS);
+  const rng = sh.getRange(2, 1, sh.getMaxRows() - 1, 9);
+  const vals = rng.getValues(), bgs = rng.getBackgrounds();
+  const at = {};
+  vals.forEach((r, i) => { const n = String(r[0]).trim().toLowerCase(); if (n && !(n in at)) at[n] = i; });
+  const order = [];
+  names.forEach(s => { const n = String(s).trim().toLowerCase(); if (n in at && order.indexOf(at[n]) === -1) order.push(at[n]); });
+  const slots = order.slice().sort((a, b) => a - b);
+  if (!order.length || order.every((src, k) => src === slots[k])) return;
+  const first = slots[0], last = slots[slots.length - 1];
+  const block = vals.slice(first, last + 1).map(r => r.slice()), blockBg = bgs.slice(first, last + 1).map(r => r.slice());
+  slots.forEach((slot, k) => { block[slot - first] = vals[order[k]].slice(); blockBg[slot - first] = bgs[order[k]].slice(); });
+  const rows = last - first + 1;
+  sh.getRange(first + 2, 1, rows, 7).setValues(block.map(r => r.slice(0, 7)));
+  sh.getRange(first + 2, 1, rows, 7).setBackgrounds(blockBg.map(r => r.slice(0, 7)));
+  sh.getRange(first + 2, 9, rows, 1).setValues(block.map(r => [r[8]]));
+  sh.getRange(first + 2, 9, rows, 1).setBackgrounds(blockBg.map(r => [r[8]]));
 }
 
 // One day's entries (they can sit anywhere near the bottom: entries for other days get added out of order)
@@ -125,8 +180,61 @@ function apiState_(ss, log, tz, ymd) {
     goalProtein: num_(set.getRange('B3').getValue()) || 110,
     entries: entries,
     foods: foodList_(ss),
+    recent: recent_(vals, start, tz),
+    days: dailyTotals_(ss, tz),
+    weights: weights_(ss, tz),
     sheetUrl: ss.getUrl(),
   };
+}
+
+// What you've logged in the last two weeks, newest first, one per distinct food/meal and amounts
+// (entries logged together, like a meal's parts, stay together)
+function recent_(vals, start, tz) {
+  const since = Utilities.formatDate(new Date(Date.now() - 14 * 86400000), tz, 'yyyy-MM-dd');
+  const groups = [], byKey = {};
+  for (let i = vals.length - 1; i >= 0 && groups.length < 80; i--) {
+    const r = vals[i];
+    if (!(r[0] instanceof Date) || !String(r[1]).trim()) continue;
+    const date = Utilities.formatDate(r[0], tz, 'yyyy-MM-dd');
+    if (date < since) continue;
+    const id = String(r[6]), m = /^(.+)-\d+$/.exec(id);
+    const key = m ? m[1] : 'row' + (start + i);
+    if (!byKey[key]) { byKey[key] = { date: date, items: [] }; groups.push(byKey[key]); }
+    byKey[key].items.unshift({ food: String(r[1]), kcal: num_(r[2]), protein: r[3] === '' ? null : num_(r[3]),
+                               amount: String(r[4]), note: String(r[5]) });
+  }
+  const seen = {}, out = [];
+  groups.forEach(g => {
+    const sig = JSON.stringify(g.items.map(it => [it.food.toLowerCase(), it.amount]));
+    if (seen[sig] || out.length >= 12) return;
+    seen[sig] = 1;
+    out.push(g);
+  });
+  return out;
+}
+
+// Daily totals (from the Daily tab) for the last few weeks
+function dailyTotals_(ss, tz) {
+  const sh = ss.getSheetByName(DAILY);
+  const last = sh.getLastRow();
+  if (last < 2) return [];
+  const start = Math.max(2, last - 44);
+  return sh.getRange(start, 1, last - start + 1, 3).getValues()
+    .filter(r => r[0] instanceof Date)
+    .map(r => ({ date: Utilities.formatDate(r[0], tz, 'yyyy-MM-dd'), kcal: num_(r[1]), protein: num_(r[2]) }));
+}
+
+// Weigh-ins for the last few weeks, oldest first
+function weights_(ss, tz) {
+  const sh = ss.getSheetByName(WEIGHT);
+  const last = sh.getLastRow();
+  if (last < 2) return [];
+  const since = Utilities.formatDate(new Date(Date.now() - 45 * 86400000), tz, 'yyyy-MM-dd');
+  return sh.getRange(2, 1, last - 1, 2).getValues()
+    .filter(r => r[0] instanceof Date && r[1] !== '' && isFinite(Number(r[1])))
+    .map(r => ({ date: Utilities.formatDate(r[0], tz, 'yyyy-MM-dd'), kg: Number(r[1]) }))
+    .filter(w => w.date >= since)
+    .sort((a, b) => a.date < b.date ? -1 : a.date > b.date ? 1 : 0);
 }
 
 function findId_(log, id) {
