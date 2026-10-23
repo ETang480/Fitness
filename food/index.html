@@ -1,0 +1,683 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Food log</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="theme-color" content="#f6f5f1" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#141413" media="(prefers-color-scheme: dark)">
+<style>
+:root{--bg:#f6f5f1;--card:#fff;--ink:#1d1c1a;--muted:#6b6a64;--line:#e3e1d9;--accent:#2a78d6;--green:#16956a;--warn:#c2410c}
+@media (prefers-color-scheme:dark){:root{--bg:#141413;--card:#21211e;--ink:#f0efec;--muted:#a3a29b;--line:#36352f;--accent:#4b93ea;--green:#2bb582;--warn:#f08a5d}}
+*{box-sizing:border-box}
+body{margin:0;font:16px/1.4 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--ink);-webkit-tap-highlight-color:transparent}
+main{max-width:520px;margin:0 auto;padding:16px 16px 48px}
+h1{font-size:22px;margin:0}
+.top{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
+.top input{width:auto;padding:6px 8px;font-size:14px}
+.sub{color:var(--muted);font-size:14px}
+.status{font-size:13px;color:var(--accent);min-height:18px;margin-top:2px}
+.status.bad{color:var(--warn)}
+.status.off{color:var(--muted)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;margin-top:14px}
+.mrow{display:flex;justify-content:space-between;align-items:baseline;font-size:14px;margin-bottom:6px}
+.mrow b{font-size:20px}
+.track{height:10px;background:var(--line);border-radius:6px;overflow:hidden;margin-bottom:12px}
+.fill{height:100%;width:0;border-radius:6px;background:var(--accent);transition:width .3s}
+.fill.p{background:var(--green)}
+.fill.over{background:var(--warn)}
+h2{font-size:15px;margin:0 0 10px;color:var(--muted);font-weight:600}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.tile{min-height:58px;text-align:left;border:1px solid var(--line);background:var(--bg);color:var(--ink);border-radius:12px;padding:10px;font:inherit;font-weight:600;cursor:pointer}
+.tile span{display:block;font-size:13px;font-weight:400;color:var(--muted);margin-top:2px}
+.tile:active{background:var(--line)}
+label{display:block;font-size:13px;color:var(--muted);margin:10px 0 4px}
+input{width:100%;font:inherit;padding:10px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--ink)}
+button,input{touch-action:manipulation}
+button{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+input[type=number]{-moz-appearance:textfield;appearance:textfield}
+input::-webkit-outer-spin-button,input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.row{display:flex;gap:8px}
+.row>div{flex:1;min-width:0}
+.btn{width:100%;margin-top:12px;padding:13px;border:0;border-radius:12px;background:var(--accent);color:#fff;font:inherit;font-weight:600;cursor:pointer}
+.btn2{width:100%;margin-top:8px;padding:11px;border:1px solid var(--line);border-radius:12px;background:none;color:var(--ink);font:inherit;cursor:pointer}
+.chk{display:flex;align-items:center;gap:8px;margin-top:12px;font-size:14px;color:var(--muted)}
+.chk input{width:20px;height:20px}
+.err{color:var(--warn);font-size:13px;min-height:18px;margin-top:6px}
+.sugg{margin-top:6px;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.sugg button{display:flex;justify-content:space-between;align-items:baseline;gap:8px;width:100%;padding:12px;border:0;border-top:1px solid var(--line);background:var(--bg);color:var(--ink);font:inherit;text-align:left;cursor:pointer}
+.sugg button:first-child{border-top:0}
+.sugg button:active{background:var(--line)}
+.sugg small{color:var(--muted);white-space:nowrap}
+.seg{display:flex;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.seg button{flex:1;padding:11px 4px;border:0;border-left:1px solid var(--line);background:var(--bg);color:var(--ink);font:inherit;cursor:pointer}
+.seg button:first-child{border-left:0}
+.seg button.on{background:var(--accent);color:#fff;font-weight:600}
+#builder{position:fixed;top:0;left:0;right:0;bottom:0;z-index:20;background:var(--bg);overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
+#builder .inner{max-width:520px;margin:0 auto;padding:16px 16px 48px}
+.bhead{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:6px}
+.bhead h2{font-size:19px;color:var(--ink);margin:0}
+body.modal main{visibility:hidden}
+.part{display:grid;grid-template-columns:1fr 92px 34px;gap:8px;align-items:center;padding:8px 0;border-top:1px solid var(--line)}
+.part:first-child{border-top:0}
+.part .nm{font-weight:600;font-size:15px}
+.part .cv{font-size:13px;color:var(--muted)}
+.amt{position:relative}
+.amt input{padding-right:30px;text-align:right}
+.amt i{position:absolute;right:10px;top:50%;transform:translateY(-50%);font-style:normal;font-size:13px;color:var(--muted)}
+.total{display:flex;justify-content:space-between;font-weight:600;padding-top:10px;border-top:1px solid var(--line);margin-top:10px}
+ul{list-style:none;padding:0;margin:0}
+li{display:flex;align-items:center;gap:8px;padding:8px 0;border-top:1px solid var(--line)}
+li:first-child{border-top:0}
+li .n{flex:1;min-width:0}
+li .n small{display:block;color:var(--muted);font-size:13px}
+li .v{color:var(--muted);font-size:14px;white-space:nowrap}
+.x{border:0;background:none;color:var(--muted);font-size:22px;line-height:1;padding:4px 8px;cursor:pointer}
+.x.armed{color:var(--warn);font-size:14px;font-weight:600}
+.adj{border:0;background:none;color:var(--accent);font:inherit;font-size:13px;padding:2px 0;cursor:pointer}
+.ovr{grid-column:1/-1;display:flex;gap:8px}
+.ovr label,.edit label{margin:0 0 2px}
+.ovr>div{flex:1;min-width:0}
+.edit{display:flex;flex-wrap:wrap;gap:8px;align-items:flex-end;width:100%}
+.edit>div{flex:1;min-width:110px}
+.edit .btn,.edit .btn2{width:auto;margin:0;padding:10px 16px}
+.empty{color:var(--muted);font-size:14px}
+.hidden{display:none}
+.toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);z-index:30;background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:12px;font-size:14px;opacity:0;transition:opacity .2s;pointer-events:none;max-width:90%}
+.toast.show{opacity:1}
+a{color:var(--accent)}
+.foot{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.foot button{border:0;background:none;color:var(--accent);font:inherit;font-size:14px;padding:0;cursor:pointer}
+#setup ol{padding-left:20px;margin:8px 0 0}
+#setup li{display:list-item;border:0;padding:4px 0}
+</style></head><body><main>
+<div class="top"><div><h1>Food log</h1><div class="sub" id="date">Loading…</div><div class="status" id="status"></div></div>
+  <input id="day" type="date" aria-label="Date to log for"></div>
+
+<div class="card hidden" id="setup"><h2>Connect to your spreadsheet</h2>
+  <div class="sub">This only needs doing once on each phone.</div>
+  <ol class="sub">
+    <li>Open <a id="pairlink" href="#" target="_blank" rel="noopener">your key page</a> (signed in to your Google account) and copy the key.</li>
+    <li>Paste it here and tap Connect.</li>
+  </ol>
+  <label for="key">Key</label>
+  <input id="key" autocomplete="off" autocapitalize="off" spellcheck="false">
+  <div class="err" id="keyerr"></div>
+  <button class="btn" id="connect" type="button">Connect</button>
+  <button class="btn2 hidden" id="keycancel" type="button">Cancel</button>
+</div>
+
+<div id="app">
+<div class="card">
+  <div class="mrow"><span>Calories</span><span><b id="kc">–</b> / <span id="kg">–</span></span></div>
+  <div class="track"><div class="fill" id="kf"></div></div>
+  <div class="mrow"><span>Protein</span><span><b id="pc">–</b> / <span id="pg">–</span> g</span></div>
+  <div class="track"><div class="fill p" id="pf"></div></div>
+  <div class="sub" id="left"></div>
+</div>
+<div class="card" id="mealcard"><h2>Meals</h2><div class="grid" id="meals"></div></div>
+<div class="card"><h2>Quick add</h2><div class="grid" id="favs"></div></div>
+<div class="card"><h2>Something else</h2>
+  <label for="food">Food</label>
+  <input id="food" autocomplete="off" spellcheck="false" placeholder="Type to search your foods">
+  <div class="sugg hidden" id="foodsugg"></div>
+  <div id="newfood" class="hidden">
+    <label>Calories are per</label>
+    <div class="seg" id="per" role="group" aria-label="Calories are per"><button type="button" data-per="100g" class="on">100 g</button><button type="button" data-per="serve">serve</button><button type="button" data-per="piece">piece</button></div>
+    <div class="row">
+      <div><label for="kcal">Kcal per <span class="perlbl">100 g</span></label><input id="kcal" type="number" inputmode="decimal" min="0"></div>
+      <div><label for="prot">Protein per <span class="perlbl">100 g</span></label><input id="prot" type="number" inputmode="decimal" min="0" placeholder="optional"></div>
+    </div>
+    <label for="amount" id="amountlbl">Grams</label><input id="amount" type="number" inputmode="decimal" min="0">
+    <label class="chk"><input type="checkbox" id="save" checked> Save to my foods for next time</label>
+    <div class="err" id="err"></div>
+    <button class="btn" id="add" type="button">Add</button>
+  </div>
+</div>
+<div class="card"><h2 id="listtitle">Today</h2><ul id="list"></ul></div>
+<p class="sub foot"><a id="sheet" href="#" target="_blank" rel="noopener">Open the spreadsheet</a><a href="../">All apps</a><button type="button" id="changekey">Change key</button></p>
+</div>
+</main>
+<div class="hidden" id="builder"><div class="inner">
+  <div class="bhead"><h2 id="btitle"></h2><button class="x" type="button" id="bclose" aria-label="Close">×</button></div>
+  <div id="parts"></div>
+  <input id="bfood" autocomplete="off" spellcheck="false" placeholder="Add another food (type to search)" style="margin-top:10px">
+  <div class="sugg hidden" id="bsugg"></div>
+  <div class="total"><span>Total</span><span id="btotal">0 kcal</span></div>
+  <div class="err" id="berr"></div>
+  <button class="btn" type="button" id="blog">Log it</button>
+  <button class="btn2" type="button" id="bcancel">Cancel</button>
+</div></div>
+<div class="toast" id="toast"></div>
+<script>
+// The spreadsheet's JSON endpoint (Apps Script deployment with access "Anyone"; every request carries your key)
+var API = /^(localhost|127\.0\.0\.1)$/.test(location.hostname) ? '/api'
+  : 'https://script.google.com/macros/s/AKfycbz_REPLACE_WITH_API_DEPLOYMENT/exec';
+// Your "Only myself" web app: its ?pair=1 page shows the key (only to you)
+var PAIR_URL = 'https://script.google.com/macros/s/AKfycbwllvcL83Wzx_2o8TNHw4iK2c7o6jHlrmejiQ8pkuD82Zt__4dY0KCzVymAv_Q6oX0pdA/exec?pair=1';
+
+function $(id) { return document.getElementById(id); }
+function lsGet(k, d) { try { var v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } }
+function lsSet(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
+function fmt(n) { return Math.round(n).toLocaleString(); }
+function r1(n) { return Math.round(n * 10) / 10; }
+function pad(n) { return (n < 10 ? '0' : '') + n; }
+function ymdOf(d) { return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); }
+function todayYmd() { return ymdOf(new Date()); }
+function newId() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 8); }
+
+// Everything is kept on the phone so the app opens and logs with no signal:
+//   BASE  = goals + your foods, DAYS = entries per date as last seen, Q = changes not yet in the sheet
+var KEY = lsGet('fl.key', '');
+var BASE = lsGet('fl.base', null), DAYS = lsGet('fl.days', {}), Q = lsGet('fl.queue', []);
+var day = todayYmd(), followToday = true;
+var B = null, editing = false, tileSig = '', lastTap = {};
+var sending = false, again = false, failures = 0, offline = false, syncErr = '', retryTimer = null;
+
+/* ---- talking to the spreadsheet ---- */
+function api(body) {
+  body.key = KEY;
+  var ctl = typeof AbortController === 'function' ? new AbortController() : null;
+  var timer = setTimeout(function () { if (ctl) ctl.abort(); }, 30000);
+  function netErr(msg) { var e = new Error(msg); e.net = true; return e; }
+  return fetch(API, { method: 'POST', body: JSON.stringify(body), signal: ctl ? ctl.signal : undefined })
+    .then(function (r) {
+      if (!r.ok) throw netErr('HTTP ' + r.status);
+      return r.text();
+    }, function (e) { throw netErr(e && e.name === 'AbortError' ? 'No reply from Google' : 'No connection'); })
+    .then(function (text) {
+      clearTimeout(timer);
+      var j;
+      try { j = JSON.parse(text); } catch (e) { throw new Error('Google sent an unexpected reply'); }
+      if (j.error) { var e2 = new Error(j.error); e2.badKey = j.error === 'bad key'; throw e2; }
+      return j;
+    }, function (e) { clearTimeout(timer); throw e; });
+}
+// Sends every waiting change in order and brings back the viewed day; one request at a time
+function sync() {
+  if (!KEY) return;
+  if (sending) { again = true; return; }
+  clearTimeout(retryTimer);
+  sending = true; again = false; status();
+  var ops = Q.slice(0, 50), want = day;
+  api({ fn: 'sync', date: want, ops: ops }).then(function (r) {
+    sending = false; failures = 0; offline = false;
+    var res = r.results || {}, failed = [], done = 0;
+    ops.forEach(function (op) {
+      if (!(op.id in res)) return;
+      done++;
+      if (res[op.id] !== 'ok') failed.push(op.label + ': ' + res[op.id]);
+    });
+    Q = Q.filter(function (op) { return !(op.id in res); });
+    lsSet('fl.queue', Q);
+    syncErr = failed.length ? 'Could not save ' + failed.join('; ') : '';
+    gotState(r.state);
+    if ((Q.length && done) || again || (want !== day && !DAYS[day])) sync(); else status();
+  }).catch(function (e) {
+    sending = false;
+    if (e.badKey) { syncErr = ''; showSetup('That key no longer works. Get the current one from your key page.'); return; }
+    if (e.net) {
+      offline = true; failures++;
+      retryTimer = setTimeout(sync, Math.min(30000, 4000 * failures));
+    } else {
+      syncErr = e.message || String(e);
+    }
+    status();
+  });
+}
+function gotState(st) {
+  BASE = { goalKcal: st.goalKcal, goalProtein: st.goalProtein, foods: st.foods, sheetUrl: st.sheetUrl };
+  DAYS[st.date] = { entries: st.entries, at: Date.now() };
+  // keep the ten most recently seen days
+  Object.keys(DAYS).sort(function (a, b) { return DAYS[b].at - DAYS[a].at; }).slice(10).forEach(function (k) { delete DAYS[k]; });
+  lsSet('fl.base', BASE); lsSet('fl.days', DAYS);
+  drawTiles(); show();
+}
+function status() {
+  var el = $('status'), n = Q.length, what = n + (n === 1 ? ' change' : ' changes');
+  el.className = 'status' + (syncErr ? ' bad' : offline ? ' off' : '');
+  if (syncErr) el.textContent = syncErr;
+  else if (n && offline) el.textContent = what + ' saved on this phone, waiting for a connection…';
+  else if (n) el.textContent = 'Syncing ' + what + '…';
+  else if (offline) el.textContent = 'Offline, showing what was saved on this phone';
+  else el.textContent = '';
+}
+
+/* ---- changes: shown straight away, sent to the sheet in the background ---- */
+function queue(op) {
+  op.id = newId();
+  Q.push(op); lsSet('fl.queue', Q);
+  show(); sync();
+}
+function enqueue(items, label) {
+  queue({ type: 'add', date: day, items: items, label: label });
+  items.forEach(function (it) {
+    // a new food you ticked "save" shows up in your foods before it reaches the sheet
+    if (it.save && BASE && !findFood(it.food)) {
+      BASE.foods.push({ name: it.food, kcal: it.kcalPer, protein: it.proteinPer === '' ? null : it.proteinPer, per: it.per,
+                        meal: '', usual: it.per === 'serve' ? null : it.amount, fav: false, count: 0, idx: 1e6 });
+      lsSet('fl.base', BASE);
+    }
+  });
+  toast(day === todayYmd() ? 'Added ' + label : 'Added ' + label + ' to ' + shortDay(day));
+}
+function itemEntry(id, it, note) {
+  var k = scale(it.per, it.amount);
+  return { id: id, food: it.food, kcal: it.kcalPer * k, protein: it.proteinPer === '' ? null : it.proteinPer * k,
+           amount: amountText(it.per, it.amount), note: note || it.note || '', pending: true };
+}
+// The viewed day as the sheet will have it once every waiting change is in
+function entriesFor(d) {
+  var list = DAYS[d] ? DAYS[d].entries.map(function (e) { var c = {}; for (var k in e) c[k] = e[k]; return c; }) : [];
+  function find(id) { for (var i = 0; i < list.length; i++) if (list[i].id === id) return list[i]; return null; }
+  Q.forEach(function (op) {
+    if (op.type === 'add' && op.date === d) {
+      op.items.forEach(function (it, i) { if (!find(op.id + '-' + i)) list.push(itemEntry(op.id + '-' + i, it)); });
+    } else if (op.type === 'update') {
+      var e = find(op.entryId);
+      if (e) { e.kcal = op.kcal; e.protein = op.protein === '' ? null : op.protein; e.note = 'edited'; e.pending = true; }
+    } else if (op.type === 'delete') {
+      list = list.filter(function (e) { return e.id !== op.entryId; });
+    }
+  });
+  return list;
+}
+
+/* ---- helpers ---- */
+var toastTimer;
+function toast(msg) {
+  var t = $('toast'); t.textContent = msg; t.classList.add('show');
+  clearTimeout(toastTimer); toastTimer = setTimeout(function () { t.classList.remove('show'); }, 2200);
+}
+function findFood(name) {
+  var n = String(name).trim().toLowerCase();
+  if (!BASE || !n) return null;
+  for (var i = 0; i < BASE.foods.length; i++) if (BASE.foods[i].name.toLowerCase() === n) return BASE.foods[i];
+  return null;
+}
+function unit(per) { return per === '100g' ? 'g' : per === 'piece' ? 'pc' : '×'; }
+function perText(f) { return f.per === '100g' ? '/100 g' : f.per === 'piece' ? '/piece' : ''; }
+function perUnit(f) { return f.per === '100g' ? 'per 100 g' : f.per === 'piece' ? 'per piece' : 'per serve'; }
+function scale(per, amt) { amt = Number(amt); if (per === '100g') return amt > 0 ? amt / 100 : 0; return amt > 0 ? amt : 0; }
+function amountText(per, a) { a = r1(Number(a)); return per === '100g' ? a + ' g' : per === 'piece' ? a + ' pc' : (a === 1 ? '' : a + ' serves'); }
+function numOr(v, fallback) { return v !== '' && v != null && !isNaN(Number(v)) ? Number(v) : fallback; }
+function item(f, amount) {
+  return { food: f.name, amount: amount, per: f.per, kcalPer: f.kcal, proteinPer: f.protein == null ? '' : f.protein, save: false };
+}
+function dateOf(d) { return new Date(d + 'T00:00:00'); }
+function shortDay(d) { return dateOf(d).toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short' }); }
+function dayName(d) {
+  var t = dateOf(todayYmd()), diff = Math.round((dateOf(d) - t) / 86400000);
+  return diff === 0 ? 'Today' : diff === 1 ? 'Tomorrow' : diff === -1 ? 'Yesterday' : shortDay(d);
+}
+
+/* ---- drawing ---- */
+function show() {
+  var named = dayName(day);
+  $('date').textContent = dateOf(day).toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long' }) +
+    (named === 'Today' || named === shortDay(day) ? '' : ' · ' + named);
+  $('day').value = day;
+  $('listtitle').textContent = named;
+  status();
+  if (!BASE) {
+    $('kc').textContent = $('kg').textContent = $('pc').textContent = $('pg').textContent = '–';
+    $('left').textContent = offline ? 'Connect once to load your foods and goals.' : 'Loading your foods…';
+    if (!editing) drawList([], 'Nothing to show yet');
+    return;
+  }
+  $('sheet').href = BASE.sheetUrl;
+  var all = entriesFor(day), k = 0, p = 0;
+  all.forEach(function (e) { k += e.kcal || 0; p += e.protein || 0; });
+  $('kc').textContent = fmt(k); $('kg').textContent = fmt(BASE.goalKcal);
+  $('pc').textContent = fmt(p); $('pg').textContent = fmt(BASE.goalProtein);
+  $('kf').style.width = Math.min(100, k / BASE.goalKcal * 100) + '%';
+  $('kf').classList.toggle('over', k > BASE.goalKcal + 100);
+  $('pf').style.width = Math.min(100, p / BASE.goalProtein * 100) + '%';
+  var kl = BASE.goalKcal - k, pl = BASE.goalProtein - p;
+  $('left').textContent = (kl >= 0 ? fmt(kl) + ' kcal left' : fmt(-kl) + ' kcal over') + ' · ' +
+    (pl > 0 ? fmt(pl) + ' g protein to go' : 'protein goal hit');
+  if (!editing) {
+    var empty = DAYS[day] ? 'Nothing logged yet' : offline ? 'This day hasn’t been loaded on this phone yet' : 'Loading…';
+    drawList(all, empty);
+  }
+}
+// Tiles keep a fixed order (Foods tab order; meals A–Z) and are only rebuilt when they change
+function drawTiles() {
+  if (!BASE) return;
+  var foods = BASE.foods.slice().sort(function (a, b) { return a.idx - b.idx; });
+  var meals = {}, order = [];
+  foods.forEach(function (f) {
+    if (!f.meal) return;
+    if (!meals[f.meal]) { meals[f.meal] = { name: f.meal, parts: [] }; order.push(f.meal); }
+    meals[f.meal].parts.push(f);
+  });
+  order.sort(function (a, b) { return a.localeCompare(b); });
+  var quick = foods.filter(function (f) { return f.fav; });
+  if (!quick.length) quick = foods.filter(function (f) { return !f.meal; }).slice(0, 6);
+  var sig = JSON.stringify([order, quick.map(function (f) { return [f.name, f.kcal, f.protein, f.per]; })]);
+  if (sig === tileSig) return;
+  tileSig = sig;
+  var mg = $('meals'); mg.innerHTML = '';
+  $('mealcard').classList.toggle('hidden', !order.length);
+  order.forEach(function (m) {
+    var b = document.createElement('button'); b.className = 'tile'; b.type = 'button'; b.textContent = m;
+    var sp = document.createElement('span'); sp.textContent = meals[m].parts.length + ' parts, by weight'; b.appendChild(sp);
+    b.onclick = function () { openMeal(meals[m]); };
+    mg.appendChild(b);
+  });
+  var favs = $('favs'); favs.innerHTML = '';
+  quick.forEach(function (f) {
+    var b = document.createElement('button'); b.className = 'tile'; b.type = 'button'; b.textContent = f.name;
+    var sp = document.createElement('span');
+    sp.textContent = fmt(f.kcal) + ' kcal' + perText(f) + ' · ' + (f.protein == null ? '? g' : fmt(f.protein) + ' g');
+    b.appendChild(sp);
+    b.onclick = function () {
+      var now = Date.now();
+      if (lastTap[f.name] && now - lastTap[f.name] < 1500) return; // ignore an accidental double tap
+      lastTap[f.name] = now;
+      if (f.per === 'serve') enqueue([item(f, 1)], f.name); else openFood(f);
+    };
+    favs.appendChild(b);
+  });
+}
+function drawList(all, emptyText) {
+  var list = $('list'); list.innerHTML = '';
+  if (!all.length) { var li0 = document.createElement('li'); li0.className = 'empty'; li0.textContent = emptyText; list.appendChild(li0); }
+  all.slice().reverse().forEach(function (e) {
+    var li = document.createElement('li');
+    var n = document.createElement('span'); n.className = 'n'; n.textContent = e.food;
+    var sm = document.createElement('small');
+    sm.textContent = (e.amount ? e.amount + ' · ' : '') + (e.pending ? 'not synced yet · ' : (/adjusted|edited/i.test(e.note || '') ? 'adjusted · ' : ''));
+    var v = document.createElement('span'); v.className = 'v';
+    v.textContent = fmt(e.kcal) + ' kcal' + (e.protein == null ? '' : ' · ' + fmt(e.protein) + ' g');
+    li.appendChild(n); li.appendChild(v);
+    var ed = document.createElement('button'); ed.type = 'button'; ed.className = 'adj'; ed.textContent = 'Edit';
+    ed.onclick = function () { editEntry(li, e); };
+    sm.appendChild(ed);
+    var x = document.createElement('button'); x.className = 'x'; x.type = 'button'; x.textContent = '×';
+    x.setAttribute('aria-label', 'Remove ' + e.food);
+    x.onclick = function () {
+      if (x.dataset.armed !== '1') {
+        x.dataset.armed = '1'; x.textContent = 'Remove'; x.classList.add('armed');
+        setTimeout(function () { x.dataset.armed = ''; x.textContent = '×'; x.classList.remove('armed'); }, 3000);
+        return;
+      }
+      queue({ type: 'delete', entryId: e.id, food: e.food, label: e.food });
+      toast('Removed ' + e.food);
+    };
+    li.appendChild(x);
+    n.appendChild(sm);
+    list.appendChild(li);
+  });
+}
+
+/* ---- change one logged entry ---- */
+function editEntry(li, e) {
+  editing = true;
+  li.innerHTML = '';
+  var box = document.createElement('div'); box.className = 'edit';
+  var t = document.createElement('div'); t.style.width = '100%'; t.style.fontWeight = '600';
+  t.textContent = 'Edit ' + e.food + (e.amount ? ' (' + e.amount + ')' : '') + ', this entry only';
+  var kf = field('Kcal', String(r1(e.kcal))), pf = field('Protein (g)', e.protein == null ? '' : String(r1(e.protein)));
+  var err = document.createElement('div'); err.className = 'err'; err.style.width = '100%';
+  var save = document.createElement('button'); save.type = 'button'; save.className = 'btn'; save.textContent = 'Save';
+  var cancel = document.createElement('button'); cancel.type = 'button'; cancel.className = 'btn2'; cancel.textContent = 'Cancel';
+  cancel.onclick = function () { editing = false; show(); };
+  save.onclick = function () {
+    var kv = kf.querySelector('input').value, pv = pf.querySelector('input').value;
+    if (kv === '' || isNaN(Number(kv)) || Number(kv) < 0) { err.textContent = 'Enter the calories'; return; }
+    if (pv !== '' && (isNaN(Number(pv)) || Number(pv) < 0)) { err.textContent = 'Protein needs to be a number'; return; }
+    editing = false;
+    queue({ type: 'update', entryId: e.id, food: e.food, kcal: Number(kv), protein: pv === '' ? '' : Number(pv), label: e.food });
+    toast('Updated ' + e.food);
+  };
+  [t, kf, pf, err, save, cancel].forEach(function (el) { box.appendChild(el); });
+  li.appendChild(box);
+}
+
+/* ---- suggestion list (sits in the page, never over the form) ---- */
+function suggestions(input, box, onPick) {
+  input.addEventListener('input', function () {
+    var v = input.value.trim().toLowerCase();
+    box.innerHTML = '';
+    if (!v || !BASE) { box.classList.add('hidden'); return; }
+    var hits = BASE.foods.filter(function (f) { return f.name.toLowerCase().indexOf(v) !== -1; })
+      .sort(function (a, b) {
+        var as = a.name.toLowerCase().indexOf(v) === 0, bs = b.name.toLowerCase().indexOf(v) === 0;
+        return (bs - as) || (b.count - a.count) || a.name.localeCompare(b.name);
+      }).slice(0, 6);
+    hits.forEach(function (f) {
+      var b = document.createElement('button'); b.type = 'button';
+      var nm = document.createElement('span'); nm.textContent = f.name;
+      var sm = document.createElement('small'); sm.textContent = fmt(f.kcal) + ' kcal' + perText(f);
+      b.appendChild(nm); b.appendChild(sm);
+      b.onclick = function () { input.value = ''; box.innerHTML = ''; box.classList.add('hidden'); onPick(f); };
+      box.appendChild(b);
+    });
+    box.classList.toggle('hidden', !hits.length);
+  });
+}
+
+/* ---- builder: one meal (several weighed parts) or one food, full screen ---- */
+function partLabel(f, meal) {
+  var n = f.name;
+  if (meal && n.toLowerCase().indexOf(meal.toLowerCase()) === 0) n = n.slice(meal.length).replace(/^[ –:,-]+/, '');
+  return n ? n.charAt(0).toUpperCase() + n.slice(1) : f.name;
+}
+function defaultAmount(f) { return f.usual != null ? f.usual : (f.per === '100g' ? '' : 1); }
+function openMeal(m) {
+  var parts = m.parts.map(function (f) { return { f: f, label: partLabel(f, m.name), amount: '' }; });
+  var rice = findFood('Steamed rice');
+  if (rice && m.name.toLowerCase().indexOf('rice') === -1) parts.push({ f: rice, label: 'Steamed rice', amount: '' });
+  B = { title: m.name, parts: parts };
+  showBuilder();
+}
+function openFood(f) {
+  B = { title: f.name, parts: [{ f: f, label: f.name, amount: defaultAmount(f) }] };
+  showBuilder();
+}
+function pickFood(f) {
+  $('newfood').classList.add('hidden');
+  if (f.meal) openMeal({ name: f.meal, parts: BASE.foods.filter(function (x) { return x.meal === f.meal; }) });
+  else openFood(f);
+}
+function showBuilder() {
+  $('btitle').textContent = B.title + (day === todayYmd() ? '' : ' · ' + dayName(day));
+  $('berr').textContent = '';
+  $('bfood').value = ''; $('bsugg').innerHTML = ''; $('bsugg').classList.add('hidden');
+  drawParts();
+  $('builder').classList.remove('hidden'); $('builder').scrollTop = 0;
+  document.body.classList.add('modal');
+  var first = document.querySelector('#parts .amt input');
+  if (first && !first.value) setTimeout(function () { first.focus({ preventScroll: true }); }, 60);
+}
+function closeBuilder() {
+  B = null; $('builder').classList.add('hidden'); document.body.classList.remove('modal');
+  if (document.activeElement) document.activeElement.blur();
+}
+// a part's kcal/protein per unit: the saved food's values unless adjusted for this entry
+function eff(p) {
+  var k = numOr(p.ok, p.f.kcal), pr = numOr(p.op, p.f.protein);
+  return { kcal: k, protein: pr, adjusted: k !== p.f.kcal || pr !== p.f.protein };
+}
+function partCalc(p) {
+  var e = eff(p), k = scale(p.f.per, p.amount);
+  return { kcal: e.kcal * k, protein: e.protein == null ? null : e.protein * k, adjusted: e.adjusted, e: e };
+}
+function partItem(p) {
+  var e = eff(p), it = item(p.f, Number(p.amount));
+  it.kcalPer = e.kcal; it.proteinPer = e.protein == null ? '' : e.protein;
+  if (e.adjusted) it.note = 'Adjusted for this entry: ' + r1(e.kcal) + ' kcal, ' + (e.protein == null ? '?' : r1(e.protein)) + ' g protein ' +
+    perUnit(p.f) + ' (saved: ' + r1(p.f.kcal) + ' kcal, ' + (p.f.protein == null ? '?' : r1(p.f.protein)) + ' g)';
+  return it;
+}
+function field(text, value, onset) {
+  var d = document.createElement('div');
+  var l = document.createElement('label'); l.textContent = text;
+  var i = document.createElement('input'); i.type = 'number'; i.inputMode = 'decimal'; i.min = '0'; i.value = value;
+  if (onset) i.oninput = function () { onset(i.value); $('berr').textContent = ''; updateTotals(); };
+  d.appendChild(l); d.appendChild(i);
+  return d;
+}
+function drawParts() {
+  var box = $('parts'); box.innerHTML = '';
+  B.parts.forEach(function (p, i) {
+    var row = document.createElement('div'); row.className = 'part';
+    var left = document.createElement('div');
+    var nm = document.createElement('div'); nm.className = 'nm'; nm.textContent = p.label;
+    var cv = document.createElement('div'); cv.className = 'cv'; cv.id = 'cv' + i;
+    var adj = document.createElement('button'); adj.type = 'button'; adj.className = 'adj';
+    adj.textContent = p.open ? 'Done adjusting' : 'Adjust for this entry';
+    adj.onclick = function () {
+      p.open = !p.open;
+      if (p.open && p.ok == null) { p.ok = String(p.f.kcal); p.op = p.f.protein == null ? '' : String(p.f.protein); }
+      drawParts();
+    };
+    left.appendChild(nm); left.appendChild(cv); left.appendChild(adj);
+    var amt = document.createElement('div'); amt.className = 'amt';
+    var inp = document.createElement('input'); inp.type = 'number'; inp.inputMode = 'decimal'; inp.min = '0';
+    inp.value = p.amount; inp.placeholder = '0';
+    inp.setAttribute('aria-label', p.label + ' amount');
+    inp.oninput = function () { p.amount = inp.value; $('berr').textContent = ''; updateTotals(); };
+    var u = document.createElement('i'); u.textContent = unit(p.f.per);
+    amt.appendChild(inp); amt.appendChild(u);
+    var x = document.createElement('button'); x.className = 'x'; x.type = 'button'; x.textContent = '×';
+    x.setAttribute('aria-label', 'Remove ' + p.label);
+    x.onclick = function () { B.parts.splice(i, 1); if (!B.parts.length) closeBuilder(); else drawParts(); };
+    row.appendChild(left); row.appendChild(amt); row.appendChild(x);
+    if (p.open) {
+      var ov = document.createElement('div'); ov.className = 'ovr';
+      ov.appendChild(field('Kcal ' + perUnit(p.f), p.ok, function (v) { p.ok = v; }));
+      ov.appendChild(field('Protein (g) ' + perUnit(p.f), p.op, function (v) { p.op = v; }));
+      row.appendChild(ov);
+    }
+    box.appendChild(row);
+  });
+  updateTotals();
+}
+function updateTotals() {
+  var tk = 0, tp = 0;
+  B.parts.forEach(function (p, i) {
+    var c = partCalc(p);
+    var per = fmt(c.e.kcal) + ' kcal' + perText(p.f);
+    $('cv' + i).textContent = (Number(p.amount) > 0 ? fmt(c.kcal) + ' kcal' + (c.protein == null ? '' : ' · ' + fmt(c.protein) + ' g') : per) +
+      (c.adjusted ? ' · adjusted' : '');
+    tk += c.kcal; tp += c.protein || 0;
+  });
+  $('btotal').textContent = fmt(tk) + ' kcal · ' + fmt(tp) + ' g protein';
+}
+suggestions($('bfood'), $('bsugg'), function (f) { B.parts.push({ f: f, label: f.name, amount: defaultAmount(f) }); drawParts(); });
+$('bcancel').onclick = closeBuilder;
+$('bclose').onclick = closeBuilder;
+$('blog').onclick = function () {
+  var items = [], bad = null;
+  B.parts.forEach(function (p) { if (Number(p.amount) > 0) { if (p.ok === '') bad = p.label; items.push(partItem(p)); } });
+  if (bad) { $('berr').textContent = 'Enter the calories for ' + bad; return; }
+  if (!items.length) { $('berr').textContent = 'Enter an amount for at least one item'; return; }
+  enqueue(items, B.title);
+  closeBuilder();
+};
+
+/* ---- something else: search your foods, or add a new one ---- */
+var newPer = '100g', autoAmount = false;
+function setPer(per) {
+  newPer = per;
+  Array.prototype.forEach.call($('per').children, function (b) { b.classList.toggle('on', b.dataset.per === per); });
+  Array.prototype.forEach.call(document.querySelectorAll('.perlbl'), function (el) { el.textContent = per === '100g' ? '100 g' : per; });
+  $('amountlbl').textContent = per === '100g' ? 'Grams' : per === 'piece' ? 'Pieces' : 'Serves';
+  if (per === '100g' && autoAmount) { $('amount').value = ''; autoAmount = false; }
+  if (per !== '100g' && !$('amount').value) { $('amount').value = 1; autoAmount = true; }
+}
+Array.prototype.forEach.call($('per').children, function (b) { b.onclick = function () { setPer(b.dataset.per); }; });
+suggestions($('food'), $('foodsugg'), pickFood);
+$('food').addEventListener('input', function () {
+  $('err').textContent = '';
+  var v = this.value.trim();
+  $('newfood').classList.toggle('hidden', !v || !!findFood(v));
+});
+// Once you start on a new food's details the matches step aside (after the tap lands, so nothing jumps under your finger)
+$('newfood').addEventListener('focusin', function () {
+  setTimeout(function () { $('foodsugg').innerHTML = ''; $('foodsugg').classList.add('hidden'); }, 0);
+});
+$('newfood').addEventListener('click', function () { $('foodsugg').innerHTML = ''; $('foodsugg').classList.add('hidden'); });
+['kcal', 'prot', 'amount'].forEach(function (id) { $(id).addEventListener('input', function () { $('err').textContent = ''; }); });
+$('add').onclick = function () {
+  var food = $('food').value.trim(), per = newPer, kcal = $('kcal').value, prot = $('prot').value, amount = $('amount').value;
+  if (!food) { $('err').textContent = 'Enter a food'; return; }
+  if (kcal === '' || isNaN(Number(kcal)) || Number(kcal) < 0) { $('err').textContent = 'Enter the calories'; return; }
+  if (prot !== '' && (isNaN(Number(prot)) || Number(prot) < 0)) { $('err').textContent = 'Protein needs to be a number'; return; }
+  if (!(Number(amount) > 0)) { $('err').textContent = per === '100g' ? 'Enter the grams' : 'Enter how many'; return; }
+  food = food.charAt(0).toUpperCase() + food.slice(1);
+  enqueue([{ food: food, amount: Number(amount), per: per, kcalPer: Number(kcal), proteinPer: prot === '' ? '' : Number(prot), save: $('save').checked }], food);
+  $('food').value = ''; $('kcal').value = ''; $('prot').value = ''; $('amount').value = ''; $('save').checked = true;
+  $('foodsugg').innerHTML = ''; $('foodsugg').classList.add('hidden'); $('newfood').classList.add('hidden');
+  setPer('100g');
+  if (document.activeElement) document.activeElement.blur();
+};
+$('amount').addEventListener('input', function () { autoAmount = false; });
+setPer('100g');
+
+/* ---- which day you're logging for ---- */
+$('day').addEventListener('change', function () {
+  day = this.value || todayYmd();
+  followToday = day === todayYmd();
+  editing = false; show(); sync();
+});
+// Left open past midnight, the app moves on to the new day (unless you picked another date)
+function catchUpDay() {
+  if (followToday && day !== todayYmd()) { day = todayYmd(); editing = false; show(); }
+}
+
+/* ---- connecting (once per phone) ---- */
+function showSetup(msg) {
+  $('setup').classList.remove('hidden'); $('app').classList.add('hidden'); $('day').classList.add('hidden');
+  $('keyerr').textContent = msg || '';
+  $('keycancel').classList.toggle('hidden', !KEY);
+  $('key').value = '';
+}
+function hideSetup() {
+  $('setup').classList.add('hidden'); $('app').classList.remove('hidden'); $('day').classList.remove('hidden');
+  $('keyerr').textContent = '';
+}
+$('pairlink').href = PAIR_URL;
+$('connect').onclick = function () {
+  var k = $('key').value.trim(), old = KEY;
+  if (!k) { $('keyerr').textContent = 'Paste the key first'; return; }
+  $('keyerr').textContent = 'Checking…';
+  KEY = k;
+  api({ fn: 'sync', date: day, ops: [] }).then(function (r) {
+    lsSet('fl.key', KEY); hideSetup(); offline = false; syncErr = '';
+    gotState(r.state); toast('Connected'); sync();
+  }).catch(function (e) {
+    KEY = old;
+    $('keyerr').textContent = e.badKey ? 'That key didn’t work. Copy it again from your key page.' : 'Could not reach Google: ' + e.message;
+  });
+};
+$('keycancel').onclick = hideSetup;
+$('changekey').onclick = function () { showSetup(''); };
+
+/* ---- start ---- */
+document.addEventListener('visibilitychange', function () {
+  if (document.hidden) return;
+  catchUpDay();
+  failures = 0; sync();
+});
+window.addEventListener('online', function () { failures = 0; sync(); });
+window.addEventListener('offline', function () { offline = true; status(); });
+
+if ('serviceWorker' in navigator) {
+  var hadWorker = !!navigator.serviceWorker.controller, reloadWhenIdle = false;
+  navigator.serviceWorker.register('sw.js').catch(function () {});
+  // a new version reloads itself, but never while you're in the middle of something
+  navigator.serviceWorker.addEventListener('controllerchange', function () {
+    if (!hadWorker) return;
+    if (!B && !editing && !Q.length && !(document.activeElement && document.activeElement.tagName === 'INPUT')) location.reload();
+    else reloadWhenIdle = true;
+  });
+  document.addEventListener('visibilitychange', function () { if (document.hidden && reloadWhenIdle && !Q.length) location.reload(); });
+}
+
+drawTiles(); show();
+if (!KEY) showSetup(); else sync();
+</script></body></html>
