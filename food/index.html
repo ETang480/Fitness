@@ -54,8 +54,38 @@ input::-webkit-outer-spin-button,input::-webkit-inner-spin-button{-webkit-appear
 .seg button{flex:1;padding:11px 4px;border:0;border-left:1px solid var(--line);background:var(--bg);color:var(--ink);font:inherit;cursor:pointer}
 .seg button:first-child{border-left:0}
 .seg button.on{background:var(--accent);color:#fff;font-weight:600}
-#builder{position:fixed;top:0;left:0;right:0;bottom:0;z-index:20;background:var(--bg);overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
-#builder .inner{max-width:520px;margin:0 auto;padding:16px 16px 48px}
+#builder,#reorder{position:fixed;top:0;left:0;right:0;bottom:0;z-index:20;background:var(--bg);overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
+#builder .inner,#reorder .inner{max-width:520px;margin:0 auto;padding:16px 16px 48px}
+.chead{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.wrow{display:flex;align-items:center;gap:8px}
+.wrow .wl{flex:1;min-width:0}
+.wrow h2{margin:0 0 2px}
+#wsub{white-space:pre-line}
+.wrow .amt{width:100px}
+.wrow .btn{width:auto;margin:0;padding:10px 16px}
+#rlist{margin-top:10px}
+#rlist li{padding:0;gap:4px}
+#rlist .nm{flex:1;min-width:0;padding:12px 0;font-weight:600}
+.handle{width:52px;height:46px;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:22px;touch-action:none;cursor:grab;-webkit-user-select:none;user-select:none}
+#rlist li.dragging{background:var(--line);border-radius:10px}
+#rlist li.dragging .nm{padding-left:8px}
+.go{border:1px solid var(--line);background:var(--bg);color:var(--accent);font:inherit;font-size:14px;font-weight:600;border-radius:10px;padding:8px 14px;cursor:pointer}
+.go:active{background:var(--line)}
+.wk{display:grid;grid-template-columns:58px 1fr 70px 52px;gap:8px;align-items:center;width:100%;padding:7px 4px;border:0;border-top:1px solid var(--line);background:none;color:var(--ink);font:inherit;font-size:13px;text-align:left;cursor:pointer}
+.wk:first-child,.wkh+.wk{border-top:0}
+.wkh{cursor:default;color:var(--muted);font-size:12px;padding-top:0;padding-bottom:2px}
+.wk.on{background:var(--bg);border-radius:8px}
+.wk .dl{font-weight:600}
+.wk .nums{text-align:right;color:var(--muted);line-height:1.25}
+.wk .kgv{text-align:right;color:var(--muted)}
+.bars{display:flex;flex-direction:column;gap:4px}
+.bar{height:7px;background:var(--line);border-radius:4px;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--accent);border-radius:4px}
+.bar i.over{background:var(--warn)}
+.bar.p i{background:var(--green)}
+#weeksum{margin-top:8px}
+.toast.act{pointer-events:auto;display:flex;align-items:center;gap:14px}
+.toast button{border:0;background:none;color:var(--accent);font:inherit;font-weight:700;padding:4px 2px;cursor:pointer}
 .bhead{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:6px}
 .bhead h2{font-size:19px;color:var(--ink);margin:0}
 body.modal main{visibility:hidden}
@@ -116,8 +146,14 @@ a{color:var(--accent)}
   <div class="track"><div class="fill p" id="pf"></div></div>
   <div class="sub" id="left"></div>
 </div>
-<div class="card" id="mealcard"><h2>Meals</h2><div class="grid" id="meals"></div></div>
-<div class="card"><h2>Quick add</h2><div class="grid" id="favs"></div></div>
+<div class="card"><div class="wrow">
+  <div class="wl"><h2 id="wtitle">Morning weight</h2><div class="sub" id="wsub"></div></div>
+  <div class="amt"><input id="wkg" type="number" inputmode="decimal" min="0" step="0.1" aria-label="Weight in kg"><i>kg</i></div>
+  <button class="btn" id="wsave" type="button">Save</button>
+</div></div>
+<div class="card" id="mealcard"><div class="chead"><h2>Meals</h2><button class="adj" type="button" id="reordermeals">Reorder</button></div><div class="grid" id="meals"></div></div>
+<div class="card"><div class="chead"><h2>Quick add</h2><button class="adj" type="button" id="reorderfavs">Reorder</button></div><div class="grid" id="favs"></div></div>
+<div class="card hidden" id="recentcard"><h2>Log again</h2><ul id="recent"></ul></div>
 <div class="card"><h2>Something else</h2>
   <label for="food">Food</label>
   <input id="food" autocomplete="off" spellcheck="false" placeholder="Type to search your foods">
@@ -135,7 +171,18 @@ a{color:var(--accent)}
     <button class="btn" id="add" type="button">Add</button>
   </div>
 </div>
+<div class="card"><h2>Ate out / quick calories</h2>
+  <label for="qwhere">Where</label><input id="qwhere" autocomplete="off" placeholder="e.g. Nando's">
+  <label for="qwhat">What (optional)</label><input id="qwhat" autocomplete="off" placeholder="e.g. half chicken and chips">
+  <div class="row">
+    <div><label for="qkcal">Kcal</label><input id="qkcal" type="number" inputmode="decimal" min="0"></div>
+    <div><label for="qprot">Protein (g)</label><input id="qprot" type="number" inputmode="decimal" min="0" placeholder="optional"></div>
+  </div>
+  <div class="err" id="qerr"></div>
+  <button class="btn" id="qadd" type="button">Add</button>
+</div>
 <div class="card"><h2 id="listtitle">Today</h2><ul id="list"></ul></div>
+<div class="card"><h2>Last 7 days</h2><div id="week"></div><div class="sub" id="weeksum"></div></div>
 <p class="sub foot"><a id="sheet" href="#" target="_blank" rel="noopener">Open the spreadsheet</a><a href="../">All apps</a><button type="button" id="changekey">Change key</button></p>
 </div>
 </main>
@@ -148,6 +195,13 @@ a{color:var(--accent)}
   <div class="err" id="berr"></div>
   <button class="btn" type="button" id="blog">Log it</button>
   <button class="btn2" type="button" id="bcancel">Cancel</button>
+</div></div>
+<div class="hidden" id="reorder"><div class="inner">
+  <div class="bhead"><h2 id="rtitle"></h2><button class="x" type="button" id="rclose" aria-label="Close">×</button></div>
+  <div class="sub">Drag ≡ up or down. The Foods tab in your spreadsheet changes to match.</div>
+  <ul id="rlist"></ul>
+  <button class="btn" type="button" id="rsave">Save order</button>
+  <button class="btn2" type="button" id="rcancel">Cancel</button>
 </div></div>
 <div class="toast" id="toast"></div>
 <script>
@@ -173,7 +227,8 @@ var KEY = lsGet('fl.key', '');
 var BASE = lsGet('fl.base', null), DAYS = lsGet('fl.days', {}), Q = lsGet('fl.queue', []);
 var day = todayYmd(), followToday = true;
 var B = null, editing = false, tileSig = '', lastTap = {};
-var sending = false, again = false, failures = 0, offline = false, syncErr = '', retryTimer = null;
+var sending = false, again = false, failures = 0, offline = false, syncErr = '', retryTimer = null, inflight = {};
+var recentSig = '', weekSig = '';
 
 /* ---- talking to the spreadsheet ---- */
 function api(body) {
@@ -201,8 +256,9 @@ function sync() {
   clearTimeout(retryTimer);
   sending = true; again = false; status();
   var ops = Q.slice(0, 50), want = day;
+  inflight = {}; ops.forEach(function (op) { inflight[op.id] = 1; });
   api({ fn: 'sync', date: want, ops: ops }).then(function (r) {
-    sending = false; failures = 0; offline = false;
+    sending = false; failures = 0; offline = false; inflight = {};
     var res = r.results || {}, failed = [], done = 0;
     ops.forEach(function (op) {
       if (!(op.id in res)) return;
@@ -215,7 +271,7 @@ function sync() {
     gotState(r.state);
     if ((Q.length && done) || again || (want !== day && !DAYS[day])) sync(); else status();
   }).catch(function (e) {
-    sending = false;
+    sending = false; inflight = {};
     if (e.badKey) { syncErr = ''; showSetup('That key no longer works. Get the current one from your key page.'); return; }
     if (e.net) {
       offline = true; failures++;
@@ -227,7 +283,8 @@ function sync() {
   });
 }
 function gotState(st) {
-  BASE = { goalKcal: st.goalKcal, goalProtein: st.goalProtein, foods: st.foods, sheetUrl: st.sheetUrl };
+  BASE = { goalKcal: st.goalKcal, goalProtein: st.goalProtein, foods: st.foods, sheetUrl: st.sheetUrl,
+           recent: st.recent || [], days: st.days || [], weights: st.weights || [] };
   DAYS[st.date] = { entries: st.entries, at: Date.now() };
   // keep the ten most recently seen days
   Object.keys(DAYS).sort(function (a, b) { return DAYS[b].at - DAYS[a].at; }).slice(10).forEach(function (k) { delete DAYS[k]; });
@@ -249,9 +306,10 @@ function queue(op) {
   op.id = newId();
   Q.push(op); lsSet('fl.queue', Q);
   show(); sync();
+  return op;
 }
 function enqueue(items, label) {
-  queue({ type: 'add', date: day, items: items, label: label });
+  var op = queue({ type: 'add', date: day, items: items, label: label });
   items.forEach(function (it) {
     // a new food you ticked "save" shows up in your foods before it reaches the sheet
     if (it.save && BASE && !findFood(it.food)) {
@@ -260,12 +318,19 @@ function enqueue(items, label) {
       lsSet('fl.base', BASE);
     }
   });
-  toast(day === todayYmd() ? 'Added ' + label : 'Added ' + label + ' to ' + shortDay(day));
+  toast(op.date === todayYmd() ? 'Added ' + label : 'Added ' + label + ' to ' + shortDay(op.date), function () { undoAdd(op); });
+}
+// Undo: drop it if it hasn't been sent yet, otherwise remove what it logged
+function undoAdd(op) {
+  var i = Q.indexOf(op);
+  if (i !== -1 && !inflight[op.id]) { Q.splice(i, 1); lsSet('fl.queue', Q); show(); }
+  else op.items.forEach(function (it, n) { queue({ type: 'delete', entryId: op.id + '-' + n, food: it.food, label: it.food }); });
+  toast('Removed ' + op.label);
 }
 function itemEntry(id, it, note) {
   var k = scale(it.per, it.amount);
   return { id: id, food: it.food, kcal: it.kcalPer * k, protein: it.proteinPer === '' ? null : it.proteinPer * k,
-           amount: amountText(it.per, it.amount), note: note || it.note || '', pending: true };
+           amount: it.amountText != null ? it.amountText : amountText(it.per, it.amount), note: note || it.note || '', pending: true };
 }
 // The viewed day as the sheet will have it once every waiting change is in
 function entriesFor(d) {
@@ -276,7 +341,10 @@ function entriesFor(d) {
       op.items.forEach(function (it, i) { if (!find(op.id + '-' + i)) list.push(itemEntry(op.id + '-' + i, it)); });
     } else if (op.type === 'update') {
       var e = find(op.entryId);
-      if (e) { e.kcal = op.kcal; e.protein = op.protein === '' ? null : op.protein; e.note = 'edited'; e.pending = true; }
+      if (e) {
+        e.kcal = op.kcal; e.protein = op.protein === '' ? null : op.protein; e.note = 'edited'; e.pending = true;
+        if (op.amount != null) e.amount = op.amount;
+      }
     } else if (op.type === 'delete') {
       list = list.filter(function (e) { return e.id !== op.entryId; });
     }
@@ -286,9 +354,17 @@ function entriesFor(d) {
 
 /* ---- helpers ---- */
 var toastTimer;
-function toast(msg) {
-  var t = $('toast'); t.textContent = msg; t.classList.add('show');
-  clearTimeout(toastTimer); toastTimer = setTimeout(function () { t.classList.remove('show'); }, 2200);
+function toast(msg, undo) {
+  var t = $('toast'); t.textContent = msg;
+  t.classList.toggle('act', !!undo);
+  if (undo) {
+    var b = document.createElement('button'); b.type = 'button'; b.textContent = 'Undo';
+    b.onclick = function () { t.classList.remove('show', 'act'); undo(); };
+    t.appendChild(b);
+  }
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(function () { t.classList.remove('show', 'act'); }, undo ? 5000 : 2200);
 }
 function findFood(name) {
   var n = String(name).trim().toLowerCase();
@@ -341,20 +417,29 @@ function show() {
     var empty = DAYS[day] ? 'Nothing logged yet' : offline ? 'This day hasn’t been loaded on this phone yet' : 'Loading…';
     drawList(all, empty);
   }
+  showWeight(); drawRecent(); drawWeek();
 }
-// Tiles keep a fixed order (Foods tab order; meals A–Z) and are only rebuilt when they change
-function drawTiles() {
-  if (!BASE) return;
+// Meals in the order they first appear on the Foods tab, each with its parts in row order
+function mealList() {
   var foods = BASE.foods.slice().sort(function (a, b) { return a.idx - b.idx; });
   var meals = {}, order = [];
   foods.forEach(function (f) {
     if (!f.meal) return;
-    if (!meals[f.meal]) { meals[f.meal] = { name: f.meal, parts: [] }; order.push(f.meal); }
+    if (!meals[f.meal]) { meals[f.meal] = { name: f.meal, parts: [] }; order.push(meals[f.meal]); }
     meals[f.meal].parts.push(f);
   });
-  order.sort(function (a, b) { return a.localeCompare(b); });
+  return order;
+}
+// Quick add = your favourites in Foods tab order (or your first few foods if none are ticked)
+function quickList() {
+  var foods = BASE.foods.slice().sort(function (a, b) { return a.idx - b.idx; });
   var quick = foods.filter(function (f) { return f.fav; });
-  if (!quick.length) quick = foods.filter(function (f) { return !f.meal; }).slice(0, 6);
+  return quick.length ? quick : foods.filter(function (f) { return !f.meal; }).slice(0, 6);
+}
+// Tiles keep a fixed order (the Foods tab's) and are only rebuilt when they change
+function drawTiles() {
+  if (!BASE) return;
+  var mealArr = mealList(), quick = quickList(), meals = {}, order = mealArr.map(function (m) { meals[m.name] = m; return m.name; });
   var sig = JSON.stringify([order, quick.map(function (f) { return [f.name, f.kcal, f.protein, f.per]; })]);
   if (sig === tileSig) return;
   tileSig = sig;
@@ -420,21 +505,269 @@ function editEntry(li, e) {
   var t = document.createElement('div'); t.style.width = '100%'; t.style.fontWeight = '600';
   t.textContent = 'Edit ' + e.food + (e.amount ? ' (' + e.amount + ')' : '') + ', this entry only';
   var kf = field('Kcal', String(r1(e.kcal))), pf = field('Protein (g)', e.protein == null ? '' : String(r1(e.protein)));
+  var kin = kf.querySelector('input'), pin = pf.querySelector('input');
+  // Changing the amount scales the calories and protein with it (so an adjusted entry stays adjusted)
+  var am = amountOf(e), af = null;
+  if (am) {
+    af = field(am.per === '100g' ? 'Grams' : am.per === 'piece' ? 'Pieces' : 'Serves', String(am.n));
+    af.querySelector('input').oninput = function () {
+      var n = Number(this.value);
+      if (!(n > 0)) return;
+      kin.value = r1(e.kcal * n / am.n);
+      if (e.protein != null) pin.value = r1(e.protein * n / am.n);
+    };
+  }
   var err = document.createElement('div'); err.className = 'err'; err.style.width = '100%';
   var save = document.createElement('button'); save.type = 'button'; save.className = 'btn'; save.textContent = 'Save';
   var cancel = document.createElement('button'); cancel.type = 'button'; cancel.className = 'btn2'; cancel.textContent = 'Cancel';
   cancel.onclick = function () { editing = false; show(); };
   save.onclick = function () {
-    var kv = kf.querySelector('input').value, pv = pf.querySelector('input').value;
+    var kv = kin.value, pv = pin.value, op = { type: 'update', entryId: e.id, food: e.food, label: e.food };
     if (kv === '' || isNaN(Number(kv)) || Number(kv) < 0) { err.textContent = 'Enter the calories'; return; }
     if (pv !== '' && (isNaN(Number(pv)) || Number(pv) < 0)) { err.textContent = 'Protein needs to be a number'; return; }
+    if (af) {
+      var n = Number(af.querySelector('input').value);
+      if (!(n > 0)) { err.textContent = 'Enter the amount'; return; }
+      if (n !== am.n) op.amount = amountText(am.per, n);
+    }
+    op.kcal = Number(kv); op.protein = pv === '' ? '' : Number(pv);
     editing = false;
-    queue({ type: 'update', entryId: e.id, food: e.food, kcal: Number(kv), protein: pv === '' ? '' : Number(pv), label: e.food });
+    queue(op);
     toast('Updated ' + e.food);
   };
-  [t, kf, pf, err, save, cancel].forEach(function (el) { box.appendChild(el); });
+  [t, af, kf, pf, err, save, cancel].forEach(function (el) { if (el) box.appendChild(el); });
   li.appendChild(box);
 }
+
+// "200 g" / "2 pc" / "3 serves" (or one serve of a saved per-serve food) → { per, n }
+function amountOf(e) {
+  var m = /^([\d.]+)\s*(g|pc|serves)$/.exec(String(e.amount || '').trim());
+  if (m) return { per: m[2] === 'g' ? '100g' : m[2] === 'pc' ? 'piece' : 'serve', n: Number(m[1]) };
+  var f = findFood(e.food);
+  return !e.amount && f && f.per === 'serve' ? { per: 'serve', n: 1 } : null;
+}
+function addDays(d, n) { var x = dateOf(d); x.setDate(x.getDate() + n); return ymdOf(x); }
+
+/* ---- morning weight (any day: it follows the date at the top) ---- */
+// Weigh-ins as the sheet will have them once waiting changes are in: { 'yyyy-MM-dd': { kg, pending } }
+function weightMap() {
+  var m = {};
+  (BASE && BASE.weights || []).forEach(function (w) { m[w.date] = { kg: w.kg }; });
+  Q.forEach(function (op) {
+    if (op.type !== 'weight') return;
+    if (op.kg === '') delete m[op.date]; else m[op.date] = { kg: op.kg, pending: true };
+  });
+  return m;
+}
+function avgWeight(m, from, to) {
+  var s = 0, n = 0;
+  for (var d = from; d <= to; d = addDays(d, 1)) if (m[d]) { s += m[d].kg; n++; }
+  return n ? s / n : null;
+}
+function showWeight() {
+  var m = weightMap(), w = m[day], t = todayYmd(), named = dayName(day);
+  $('wtitle').textContent = day === t ? 'Morning weight' : 'Weight · ' + named;
+  var last = null;
+  Object.keys(m).sort().forEach(function (d) { if (d <= day) last = m[d].kg; });
+  var inp = $('wkg');
+  if (document.activeElement !== inp) { inp.value = w ? r1(w.kg).toFixed(1) : ''; inp.placeholder = last != null ? r1(last).toFixed(1) : ''; }
+  var a = avgWeight(m, addDays(day, -6), day), b = avgWeight(m, addDays(day, -13), addDays(day, -7));
+  var txt = w ? 'Saved' + (w.pending ? ', not synced yet' : '') : 'Not entered yet';
+  if (a != null) txt += '\n7-day avg ' + a.toFixed(1) + ' kg' + (b != null ? ' (' + (a - b >= 0 ? '+' : '−') + Math.abs(a - b).toFixed(1) + ')' : '');
+  $('wsub').textContent = txt;
+}
+$('wsave').onclick = function () {
+  var v = $('wkg').value.trim(), m = weightMap();
+  if (v === '' && !m[day]) { toast('Type your weight first'); return; }
+  if (v !== '' && !(Number(v) > 20 && Number(v) < 400)) { toast('Enter your weight in kg'); return; }
+  queue({ type: 'weight', date: day, kg: v === '' ? '' : r1(Number(v)), label: 'weight' });
+  $('wkg').blur();
+  toast(v === '' ? 'Weight removed' : 'Saved ' + r1(Number(v)) + ' kg');
+};
+
+/* ---- log again: what you've had in the last two weeks ---- */
+function recentLabel(g) {
+  if (g.items.length === 1) return g.items[0].food;
+  var meals = g.items.map(function (it) { var f = findFood(it.food); return f ? f.meal : ''; });
+  if (meals[0] && meals.every(function (m) { return m === meals[0]; })) return meals[0];
+  return g.items.map(function (it) { return it.food; }).join(' + ');
+}
+// Same amounts again, at today's values for your saved foods; adjusted or one-off entries repeat their totals
+function againItem(e) {
+  var f = findFood(e.food), am = amountOf(e);
+  if (f && am && am.per === f.per && !/adjusted|edited/i.test(e.note || '')) return item(f, am.n);
+  return { food: e.food, amount: 1, per: 'serve', kcalPer: e.kcal, proteinPer: e.protein == null ? '' : e.protein, save: false,
+           amountText: e.amount || '', note: /^ate out/i.test(e.note || '') ? e.note : '' };
+}
+function drawRecent() {
+  var list = (BASE && BASE.recent || []).slice(0, 6);
+  var sig = JSON.stringify(list);
+  if (sig === recentSig) return;
+  recentSig = sig;
+  $('recentcard').classList.toggle('hidden', !list.length);
+  var ul = $('recent'); ul.innerHTML = '';
+  list.forEach(function (g) {
+    var label = recentLabel(g), k = 0;
+    g.items.forEach(function (it) { k += it.kcal; });
+    var li = document.createElement('li');
+    var n = document.createElement('span'); n.className = 'n'; n.textContent = label;
+    var sm = document.createElement('small');
+    var amts = g.items.map(function (it) { return it.amount; }).filter(Boolean).join(', ');
+    sm.textContent = (amts ? amts + ' · ' : '') + fmt(k) + ' kcal · ' + dayName(g.date);
+    n.appendChild(sm);
+    var b = document.createElement('button'); b.type = 'button'; b.className = 'go'; b.textContent = 'Log';
+    b.onclick = function () {
+      var now = Date.now();
+      if (lastTap['again:' + label] && now - lastTap['again:' + label] < 1500) return;
+      lastTap['again:' + label] = now;
+      enqueue(g.items.map(againItem), label);
+    };
+    li.appendChild(n); li.appendChild(b);
+    ul.appendChild(li);
+  });
+}
+
+/* ---- last 7 days: calories, protein and weight; tap a day to open it ---- */
+function dayTotals(d) {
+  var k = 0, p = 0, server = null;
+  if (!DAYS[d] && BASE) (BASE.days || []).forEach(function (x) { if (x.date === d) server = x; });
+  if (server) { k = server.kcal; p = server.protein; }
+  entriesFor(d).forEach(function (e) { k += e.kcal || 0; p += e.protein || 0; });
+  return { kcal: k, protein: p, known: !!(DAYS[d] || server) || k > 0 };
+}
+function drawWeek() {
+  if (!BASE) return;
+  var t = todayYmd(), m = weightMap(), rows = [];
+  for (var i = 6; i >= 0; i--) {
+    var d = addDays(t, -i), tot = dayTotals(d);
+    rows.push({ d: d, kcal: tot.kcal, protein: tot.protein, known: tot.known, kg: m[d] ? m[d].kg : null });
+  }
+  var sig = JSON.stringify([rows, day, BASE.goalKcal, BASE.goalProtein]);
+  if (sig === weekSig) return;
+  weekSig = sig;
+  var box = $('week'); box.innerHTML = '';
+  var head = document.createElement('div'); head.className = 'wk wkh';
+  ['', 'calories / protein', 'kcal / g', 'kg'].forEach(function (s, j) {
+    var c = document.createElement('span'); c.textContent = s; if (j > 1) c.style.textAlign = 'right'; head.appendChild(c);
+  });
+  box.appendChild(head);
+  var logged = rows.filter(function (r) { return r.kcal > 0; }), hits = 0, sk = 0, sp = 0;
+  rows.forEach(function (r) {
+    var b = document.createElement('button'); b.type = 'button'; b.className = 'wk' + (r.d === day ? ' on' : '');
+    var dl = document.createElement('span'); dl.className = 'dl';
+    dl.textContent = r.d === t ? 'Today' : dateOf(r.d).toLocaleDateString(undefined, { weekday: 'short', day: 'numeric' });
+    var bars = document.createElement('span'); bars.className = 'bars';
+    [[r.kcal, BASE.goalKcal, ''], [r.protein, BASE.goalProtein, ' p']].forEach(function (x, j) {
+      var bar = document.createElement('span'); bar.className = 'bar' + x[2];
+      var fill = document.createElement('i'); fill.style.width = Math.min(100, x[0] / x[1] * 100) + '%';
+      if (j === 0 && x[0] > x[1] + 100) fill.className = 'over';
+      bar.appendChild(fill); bars.appendChild(bar);
+    });
+    var nums = document.createElement('span'); nums.className = 'nums';
+    nums.textContent = r.kcal > 0 ? fmt(r.kcal) + '\n' + fmt(r.protein) + ' g' : (r.known ? '–' : '');
+    nums.style.whiteSpace = 'pre';
+    var kg = document.createElement('span'); kg.className = 'kgv'; kg.textContent = r.kg != null ? r1(r.kg).toFixed(1) : '';
+    b.appendChild(dl); b.appendChild(bars); b.appendChild(nums); b.appendChild(kg);
+    b.onclick = function () {
+      day = r.d; followToday = day === t; editing = false; show(); sync();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+    box.appendChild(b);
+    if (r.kcal > 0) { sk += r.kcal; sp += r.protein; if (r.protein >= BASE.goalProtein) hits++; }
+  });
+  var a = avgWeight(m, addDays(t, -6), t), pw = avgWeight(m, addDays(t, -13), addDays(t, -7));
+  var s = logged.length ? 'Average ' + fmt(sk / logged.length) + ' kcal · ' + fmt(sp / logged.length) + ' g protein · protein goal ' +
+    hits + ' of ' + logged.length + ' days' : 'Nothing logged in the last 7 days';
+  if (a != null) s += '. Weight avg ' + a.toFixed(1) + ' kg' + (pw != null ? ', ' + (a - pw >= 0 ? 'up ' : 'down ') + Math.abs(a - pw).toFixed(1) + ' on the week before' : '');
+  $('weeksum').textContent = s + '.';
+}
+
+/* ---- reorder meals or quick add (drag ≡); the Foods tab follows ---- */
+var reorderKind = null;
+function openReorder(kind) {
+  if (!BASE) return;
+  reorderKind = kind;
+  var names = kind === 'meals' ? mealList().map(function (m) { return m.name; }) : quickList().map(function (f) { return f.name; });
+  $('rtitle').textContent = kind === 'meals' ? 'Reorder meals' : 'Reorder quick add';
+  var ul = $('rlist'); ul.innerHTML = '';
+  names.forEach(function (nm) {
+    var li = document.createElement('li'); li.dataset.name = nm;
+    var s = document.createElement('span'); s.className = 'nm'; s.textContent = nm;
+    var h = document.createElement('span'); h.className = 'handle'; h.textContent = '≡'; h.setAttribute('aria-label', 'Drag to move ' + nm);
+    li.appendChild(s); li.appendChild(h); ul.appendChild(li);
+  });
+  $('reorder').classList.remove('hidden'); $('reorder').scrollTop = 0;
+  document.body.classList.add('modal');
+}
+function closeReorder() { reorderKind = null; $('reorder').classList.add('hidden'); document.body.classList.remove('modal'); }
+// Dragging a handle moves its row live; the list scrolls when you hold near the top or bottom
+$('rlist').addEventListener('pointerdown', function (e) {
+  var h = e.target.closest ? e.target.closest('.handle') : null;
+  if (!h) return;
+  e.preventDefault();
+  // listen on the window: moving the row in the page would drop a pointer capture on the handle
+  var ul = this, li = h.parentNode, panel = $('reorder'), pid = e.pointerId;
+  li.classList.add('dragging');
+  function move(ev) {
+    if (ev.pointerId !== pid) return;
+    ev.preventDefault();
+    var y = ev.clientY;
+    if (y < 70) panel.scrollTop -= 12; else if (y > innerHeight - 70) panel.scrollTop += 12;
+    var items = Array.prototype.slice.call(ul.children);
+    for (var i = 0; i < items.length; i++) {
+      if (items[i] === li) continue;
+      var r = items[i].getBoundingClientRect();
+      if (y < r.top + r.height / 2) { if (li.nextSibling !== items[i]) ul.insertBefore(li, items[i]); return; }
+    }
+    if (ul.lastChild !== li) ul.appendChild(li);
+  }
+  function up(ev) {
+    if (ev.pointerId !== pid) return;
+    li.classList.remove('dragging');
+    window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', up); window.removeEventListener('pointercancel', up);
+  }
+  window.addEventListener('pointermove', move, { passive: false });
+  window.addEventListener('pointerup', up); window.addEventListener('pointercancel', up);
+});
+$('rsave').onclick = function () {
+  var order = Array.prototype.map.call($('rlist').children, function (li) { return li.dataset.name; });
+  var names = order;
+  if (reorderKind === 'meals') {
+    var byName = {};
+    mealList().forEach(function (m) { byName[m.name] = m; });
+    names = [];
+    order.forEach(function (nm) { byName[nm].parts.forEach(function (f) { names.push(f.name); }); });
+  }
+  // same swap the sheet will do: these foods trade row positions among themselves
+  var foods = names.map(findFood).filter(Boolean);
+  var slots = foods.map(function (f) { return f.idx; }).sort(function (a, b) { return a - b; });
+  var changed = foods.some(function (f, k) { return f.idx !== slots[k]; });
+  closeReorder();
+  if (!changed) return;
+  foods.forEach(function (f, k) { f.idx = slots[k]; });
+  lsSet('fl.base', BASE);
+  drawTiles();
+  queue({ type: 'reorder', names: names, label: 'new order' });
+  toast('Order saved');
+};
+$('rcancel').onclick = closeReorder;
+$('rclose').onclick = closeReorder;
+$('reordermeals').onclick = function () { openReorder('meals'); };
+$('reorderfavs').onclick = function () { openReorder('favs'); };
+
+/* ---- ate out / quick calories: just a number, and where you were ---- */
+['qwhere', 'qwhat', 'qkcal', 'qprot'].forEach(function (id) { $(id).addEventListener('input', function () { $('qerr').textContent = ''; }); });
+$('qadd').onclick = function () {
+  var where = $('qwhere').value.trim(), what = $('qwhat').value.trim(), kcal = $('qkcal').value, prot = $('qprot').value;
+  if (!where) { $('qerr').textContent = 'Enter where you ate'; return; }
+  if (kcal === '' || isNaN(Number(kcal)) || Number(kcal) < 0) { $('qerr').textContent = 'Enter the calories'; return; }
+  if (prot !== '' && (isNaN(Number(prot)) || Number(prot) < 0)) { $('qerr').textContent = 'Protein needs to be a number'; return; }
+  var name = where.charAt(0).toUpperCase() + where.slice(1) + (what ? ' – ' + what : '');
+  enqueue([{ food: name, amount: 1, per: 'serve', kcalPer: Number(kcal), proteinPer: prot === '' ? '' : Number(prot), save: false,
+             amountText: '', note: 'Ate out' }], name);
+  ['qwhere', 'qwhat', 'qkcal', 'qprot'].forEach(function (id) { $(id).value = ''; });
+  if (document.activeElement) document.activeElement.blur();
+};
 
 /* ---- suggestion list (sits in the page, never over the form) ---- */
 function suggestions(input, box, onPick) {
@@ -479,7 +812,7 @@ function openFood(f) {
 }
 function pickFood(f) {
   $('newfood').classList.add('hidden');
-  if (f.meal) openMeal({ name: f.meal, parts: BASE.foods.filter(function (x) { return x.meal === f.meal; }) });
+  if (f.meal) openMeal(mealList().filter(function (m) { return m.name === f.meal; })[0]);
   else openFood(f);
 }
 function showBuilder() {
